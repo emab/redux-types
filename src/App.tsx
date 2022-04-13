@@ -1,26 +1,46 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { useDispatch, useSelector } from "react-redux";
+import { currentAvailabilitySelector, timeLeftSelector } from "./selectors";
+import { Availability } from "./types";
+import { setCurrentAvailability, setTimeLeft } from "./actions";
 
-function App() {
+export const App = () => {
+  const dispatch = useDispatch();
+
+  const availability = useSelector(currentAvailabilitySelector);
+  const timeLeft = useSelector(timeLeftSelector);
+
+  const toggleAvailability = () => {
+    dispatch(
+      setCurrentAvailability(
+        availability === Availability.UNAVAILABLE
+          ? Availability.AVAILABLE
+          : Availability.UNAVAILABLE
+      )
+    );
+  };
+
+  const randomizeTime = () => {
+    dispatch(setTimeLeft(new Date(Math.random() * Date.now())));
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div>
+      <p>
+        Based on advice from{" "}
+        <a href="https://phryneas.de/redux-typescript-no-discriminating-union">
+          this blog post
+        </a>{" "}
+        written by the author of{" "}
+        <a href="https://github.com/reduxjs/redux-toolkit">redux-toolkit</a>.
+      </p>
+      <p>Availability: {availability}</p>
+      <p>
+        <button onClick={toggleAvailability}>Toggle availability</button>
+      </p>
+      <p>Time left: {timeLeft.toDateString()}</p>
+      <p>
+        <button onClick={randomizeTime}>Randomise time</button>
+      </p>
     </div>
   );
-}
-
-export default App;
+};

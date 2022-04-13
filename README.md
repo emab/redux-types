@@ -1,46 +1,105 @@
-# Getting Started with Create React App
+# Redux store proposal
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This setup does not rely on a union of `Action` types, and instead uses custom action creators which include a `.match()` type predicate function used to resolve the action type.
 
-## Available Scripts
+Code has been copied and adapted from [this blog post](https://phryneas.de/redux-typescript-no-discriminating-union) written by the author of [redux-toolkit](https://github.com/reduxjs/redux-toolkit).
 
-In the project directory, you can run:
+The main concept of this method is using a custom action creator to create all actions. This is done here with `withMatcher()`.
 
-### `npm start`
+## `withMatcher()`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```ts
+type Matchable<ActionCreator extends () => AnyAction> = ActionCreator & {
+    type: ReturnType<ActionCreator>["type"];
+    match(action: AnyAction): action is ReturnType<ActionCreator>;
+};
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+export const withMatcher = <
+    ActionCreator extends (...args: any[]) => AnyAction & { type: string }
+    >(
+    actionCreator: ActionCreator
+): Matchable<ActionCreator> => {
+    const type = actionCreator().type;
+    return Object.assign(actionCreator, {
+        type,
+        match: (action: AnyAction): action is ReturnType<ActionCreator> =>
+            action.type === type,
+    });
+};
+```
 
-### `npm test`
+This is a slightly modified version from the blog post, only allowing a specific pattern of `withMatcher` usage.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Usage
 
-### `npm run build`
+The good thing about this method is that there is very little boilerplate code once the types are in place. To create an action, we do this:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```ts
+export const myAction = withMatcher((value: string) => ({
+    type: "ACTION_TYPE",
+    value,
+}))
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Now our reducer can handle this action:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```ts
+const reducer = (state: State, action: AnyAction): State => {
+    if (myAction.match(action)) {
+        // type is correctly inferred here
+        return {
+            ...state,
+            stringValue: action.value
+        }
+    }
+}
+```
 
-### `npm run eject`
+## `SecondaryReducer`
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Since we don't create any specific types for actions, a problem occurs when we try to split out a reducer.
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+How do we type `action` here without using `AnyAction` or manually defining the type (which wouldn't automatically warn you if you changed the action type!)?
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```ts
+// We haven't created a type for the action, so we'd have to manually set the type
+// Using AnyAction here would mean we don't get the help of the TS server with our typed actions
+const myActionReducer = (state: State, action: { value: string }) => ({
+    ...state,
+    stringValue: action.value,
+}) 
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+const reducer = (state: State, action: AnyAction): State => {
+    if (myAction.match(action)) {
+        return myActionReducer(state, action);
+    }
+}
+```
 
-## Learn More
+To deal with this, the following type can be applied to a function to infer the action type from the creator:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```ts
+export type SecondaryReducer<
+    State,
+    ActionCreator extends (...args: any[]) => unknown
+    > = (state: State, action: ReturnType<ActionCreator>) => State;
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Usage
+
+Here `state` and `action` will be automatically inferred via the generic arguments to StandardReducer:
+
+```ts
+const myActionReducer: SecondardReducer<State, typeof myAction> = (state, action) => ({
+    ...state,
+    stringValue: action.value,
+}) 
+
+const reducer = (state: State, action: AnyAction): State => {
+    if (myAction.match(action)) {
+        return myActionReducer(state, action);
+    }
+}
+```
+
+
