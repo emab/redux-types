@@ -1,4 +1,4 @@
-# Redux store proposal
+# Redux typed store pattern
 
 This setup does not rely on a union of `Action` types, and instead uses custom action creators which include a `.match()` type predicate function used to resolve the action type.
 
@@ -9,23 +9,19 @@ The main concept of this method is using a custom action creator to create all a
 ## `withMatcher()`
 
 ```ts
-type Matchable<ActionCreator extends () => AnyAction> = ActionCreator & {
-    type: ReturnType<ActionCreator>["type"];
+type ActionCreatorFn = (...args: any[]) => AnyAction & { type: string };
+
+type Matchable<ActionCreator extends ActionCreatorFn> = ActionCreator & {
     match(action: AnyAction): action is ReturnType<ActionCreator>;
 };
 
-export const withMatcher = <
-    ActionCreator extends (...args: any[]) => AnyAction & { type: string }
-    >(
+export const withMatcher = <ActionCreator extends ActionCreatorFn>(
     actionCreator: ActionCreator
-): Matchable<ActionCreator> => {
-    const type = actionCreator().type;
-    return Object.assign(actionCreator, {
-        type,
+): Matchable<ActionCreator> =>
+    Object.assign(actionCreator, {
         match: (action: AnyAction): action is ReturnType<ActionCreator> =>
-            action.type === type,
+            action.type === actionCreator().type,
     });
-};
 ```
 
 This is a slightly modified version from the blog post, only allowing a specific pattern of `withMatcher` usage.
@@ -79,10 +75,10 @@ const reducer = (state: State, action: AnyAction): State => {
 To deal with this, the following type can be applied to a function to infer the action type from the creator:
 
 ```ts
-export type SecondaryReducer<
-    State,
-    ActionCreator extends (...args: any[]) => unknown
-    > = (state: State, action: ReturnType<ActionCreator>) => State;
+export type SecondaryReducer<State, ActionCreator extends ActionCreatorFn> = (
+    state: State,
+    action: ReturnType<ActionCreator>
+) => State;
 ```
 
 ### Usage
