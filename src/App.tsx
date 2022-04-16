@@ -1,7 +1,16 @@
 import { useDispatch, useSelector } from "react-redux";
-import { currentAvailabilitySelector, timeLeftSelector } from "./selectors";
-import { Availability } from "./types";
-import { setCurrentAvailability, setTimeLeft } from "./actions";
+import {
+  currentAvailabilitySelector,
+  timeLeftSelector,
+} from "./store/availability/selectors";
+import { Availability } from "./store/availability/types";
+import {
+  setCurrentAvailabilityAction,
+  setTimeLeftAction,
+} from "./store/availability/actions";
+import { getCatFactAsync } from "./store/cats/thunks";
+import { catFactSelector } from "./store/cats/selectors";
+import { clearCatFactAction } from "./store/cats/actions";
 
 export const App = () => {
   const dispatch = useDispatch();
@@ -9,9 +18,11 @@ export const App = () => {
   const availability = useSelector(currentAvailabilitySelector);
   const timeLeft = useSelector(timeLeftSelector);
 
+  const catFact = useSelector(catFactSelector);
+
   const toggleAvailability = () => {
     dispatch(
-      setCurrentAvailability(
+      setCurrentAvailabilityAction(
         availability === Availability.UNAVAILABLE
           ? Availability.AVAILABLE
           : Availability.UNAVAILABLE
@@ -20,7 +31,15 @@ export const App = () => {
   };
 
   const randomizeTime = () => {
-    dispatch(setTimeLeft(new Date(Math.random() * Date.now())));
+    dispatch(setTimeLeftAction(new Date(Math.random() * Date.now())));
+  };
+
+  const getCatFact = () => {
+    dispatch(getCatFactAsync());
+  };
+
+  const clearCatFact = () => {
+    dispatch(clearCatFactAction());
   };
 
   return (
@@ -40,6 +59,11 @@ export const App = () => {
       <p>Time left: {timeLeft.toDateString()}</p>
       <p>
         <button onClick={randomizeTime}>Randomise time</button>
+      </p>
+      <p>
+        <button onClick={getCatFact}>Get cat fact</button>
+        <button onClick={clearCatFact}>Clear fact</button>
+        <p>{catFact}</p>
       </p>
     </div>
   );

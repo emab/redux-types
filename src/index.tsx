@@ -1,20 +1,25 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
-import { AvailabilityState, reducer } from "./reducers";
-import createStore from "./createStore";
+import createStore from "./utils/createStore";
 import { Provider } from "react-redux";
-import { Availability } from "./types";
+import { Availability } from "./store/availability/types";
+import { rootReducer, State } from "./store/store";
 
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 
-const initialState: AvailabilityState = {
-  currentAvailability: Availability.AVAILABLE,
+const initialState: State = {
+  availability: {
+    currentAvailability: Availability.AVAILABLE,
+  },
+  cat: {
+    fact: undefined,
+  },
 };
 
-const store = createStore(reducer, initialState);
+const store = createStore(rootReducer, initialState);
 
 root.render(
   <React.StrictMode>

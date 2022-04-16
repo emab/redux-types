@@ -1,6 +1,6 @@
 import { Reducer } from "redux";
-import { setCurrentAvailability, setTimeLeft } from "./actions";
-import { SecondaryReducer } from "./actionUtils";
+import { setCurrentAvailabilityAction, setTimeLeftAction } from "./actions";
+import { SecondaryReducer } from "../../utils/actionUtils";
 import { Availability } from "./types";
 
 export type AvailabilityState = {
@@ -14,24 +14,24 @@ const initialState: AvailabilityState = {
 
 const timeLeftReducer: SecondaryReducer<
   AvailabilityState,
-  typeof setTimeLeft
+  typeof setTimeLeftAction
 > = (state, action) => ({
   ...state,
   timeLeft: action.timeLeft,
 });
 
-export const reducer: Reducer<AvailabilityState> = (
+export const availabilityReducer: Reducer<AvailabilityState> = (
   state = initialState,
   action
 ) => {
-  if (setCurrentAvailability.match(action)) {
+  if (setCurrentAvailabilityAction.match(action)) {
     return {
       ...state,
       currentAvailability: action.availability,
     };
   }
 
-  if (setTimeLeft.match(action)) {
+  if (setTimeLeftAction.match(action)) {
     return timeLeftReducer(state, action);
   }
 
