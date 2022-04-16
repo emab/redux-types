@@ -4,6 +4,8 @@ This setup does not rely on a union of `Action` types, and instead uses custom a
 
 Code has been copied and adapted from [this blog post](https://phryneas.de/redux-typescript-no-discriminating-union) written by the author of [redux-toolkit](https://github.com/reduxjs/redux-toolkit).
 
+An extended example with multiple slices of state and `redux-thunk` is available in [this pr](https://github.com/emab/redux-types/pull/1).
+
 The main concept of this method is using a custom action creator to create all actions. This is done here with `withMatcher()`.
 
 ## `withMatcher()`
